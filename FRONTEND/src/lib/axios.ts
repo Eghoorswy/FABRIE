@@ -7,7 +7,6 @@ const api = axios.create({
   withCredentials: true, // Important for CSRF and session cookies
 });
 
-
 // Methods that require CSRF protection
 const METHODS_REQUIRING_CSRF = ['post', 'put', 'patch', 'delete'];
 
@@ -37,10 +36,10 @@ export const ensureCSRFToken = async (): Promise<void> => {
     return;
   }
 
-  // Make new CSRF token request
+  // Make new CSRF token request - FIXED ENDPOINT
   csrfTokenRequest = (async () => {
     try {
-      await api.get("csrf/");
+      await api.get("api/csrf/"); // CHANGED FROM "csrf/" TO "api/csrf/"
       console.log("CSRF token obtained successfully");
     } catch (error) {
       console.error("CSRF token fetch failed:", error);
