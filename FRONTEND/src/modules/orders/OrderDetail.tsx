@@ -8,11 +8,13 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ensureCSRFToken } from "@/lib/axios";
+import { deleteOrder } from "@/api/orders";
 
 const OrderDetail: React.FC = () => {
   const { order: initialOrder, loading, error: fetchError, updateOrder } = useOrderDetail();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [order, setOrder] = useState<Order | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -54,7 +56,7 @@ const OrderDetail: React.FC = () => {
         return;
       }
 
-      // Create FormData with proper structure (individual fields, not nested JSON)
+      // Create FormData with proper structure
       const formData = new FormData();
       
       // Append all fields individually as the backend expects
@@ -106,6 +108,24 @@ const OrderDetail: React.FC = () => {
       toast.error(errorMessage);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!order) return;
+
+    setIsDeleting(true);
+    try {
+      await ensureCSRFToken();
+      await deleteOrder(order.product_id);
+      toast.success("Order deleted successfully");
+      navigate("/orders");
+    } catch (error: any) {
+      console.error("Error deleting order:", error);
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || "Failed to delete order";
+      toast.error(errorMessage);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -198,11 +218,13 @@ const OrderDetail: React.FC = () => {
       order={order}
       isEditing={isEditing}
       isSaving={isSaving}
+      isDeleting={isDeleting}
       error={saveError}
       onBack={() => navigate("/orders")}
       onEdit={() => setIsEditing(true)}
       onSave={handleSave}
       onCancel={handleCancel}
+      onDelete={handleDelete}
       onChange={handleChange}
       onSizeQuantityChange={handleSizeQuantityChange}
     />

@@ -172,8 +172,8 @@ const OrderForm: React.FC = () => {
         console.log(key, value);
       }
 
-      // Fix: Updated API endpoint to remove duplicate /api
-      const response = await api.post("/orders/", formData, {
+      // FIXED: Correct API endpoint
+      const response = await api.post("/api/orders/", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },

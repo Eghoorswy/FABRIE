@@ -24,18 +24,32 @@ import {
   Upload,
   Image as ImageIcon,
   Loader2,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface OrderDetailViewProps {
   order: Order;
   isEditing: boolean;
   isSaving?: boolean;
+  isDeleting?: boolean;
   error?: string | null;
   onBack: () => void;
   onEdit: () => void;
   onSave: () => void;
   onCancel: () => void;
+  onDelete: () => void;
   onChange: (field: keyof Order, value: any) => void;
   onSizeQuantityChange: (size: string, quantity: number) => void;
 }
@@ -44,11 +58,13 @@ const OrderDetailView: React.FC<OrderDetailViewProps> = ({
   order,
   isEditing,
   isSaving = false,
+  isDeleting = false,
   error = null,
   onBack,
   onEdit,
   onSave,
   onCancel,
+  onDelete,
   onChange,
   onSizeQuantityChange,
 }) => {
@@ -80,7 +96,7 @@ const OrderDetailView: React.FC<OrderDetailViewProps> = ({
       case "stitching":
       case "finishing":
         return "bg-orange-100 text-orange-800 border-orange-200";
-      case "Cancelled": // Fixed: "cancelled" → "Cancelled"
+      case "Cancelled":
         return "bg-red-100 text-red-800 border-red-200";
       default:
         return "bg-gray-100 text-gray-800 border-gray-200";
@@ -132,7 +148,6 @@ const OrderDetailView: React.FC<OrderDetailViewProps> = ({
       onChange("product_image", data.imageUrl);
       toast.success("Image uploaded successfully");
       
-      // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
@@ -157,7 +172,6 @@ const OrderDetailView: React.FC<OrderDetailViewProps> = ({
     if (typeof order.product_image === "string") {
       return order.product_image;
     }
-    // Handle case where product_image might be a File object
     return URL.createObjectURL(order.product_image);
   };
 
@@ -168,7 +182,6 @@ const OrderDetailView: React.FC<OrderDetailViewProps> = ({
       
       const printWindow = window.open("", "_blank");
       if (!printWindow) {
-        // Fallback to browser print if popup is blocked
         toast.info("Please allow popups for printing or use browser's print function");
         const fallbackPrintContent = document.createElement("div");
         fallbackPrintContent.innerHTML = printContent;
@@ -181,11 +194,9 @@ const OrderDetailView: React.FC<OrderDetailViewProps> = ({
       printWindow.document.write(printContent);
       printWindow.document.close();
       
-      // Wait for images to load before printing
       printWindow.onload = () => {
         setTimeout(() => {
           printWindow.print();
-          // Don't close immediately to allow print dialog to show
           setTimeout(() => {
             printWindow.close();
           }, 100);
@@ -592,7 +603,6 @@ const OrderDetailView: React.FC<OrderDetailViewProps> = ({
 
   return (
     <div className="space-y-6 p-6">
-      {/* Error Alert */}
       {error && (
         <Alert variant="destructive">
           <AlertDescription>{error}</AlertDescription>
@@ -602,7 +612,7 @@ const OrderDetailView: React.FC<OrderDetailViewProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" onClick={onBack} disabled={isSaving}>
+          <Button variant="ghost" onClick={onBack} disabled={isSaving || isDeleting}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Orders
           </Button>
@@ -626,15 +636,51 @@ const OrderDetailView: React.FC<OrderDetailViewProps> = ({
               <Button 
                 onClick={handlePrintOrder} 
                 variant="outline"
-                disabled={isSaving}
+                disabled={isSaving || isDeleting}
               >
                 <Printer className="mr-2 h-4 w-4" />
                 Print
               </Button>
-              <Button onClick={onEdit} disabled={isSaving}>
+              <Button onClick={onEdit} disabled={isSaving || isDeleting}>
                 <Edit className="mr-2 h-4 w-4" />
                 Edit
               </Button>
+              
+              {/* Delete Button with Confirmation Dialog */}
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button 
+                    variant="destructive"
+                    disabled={isSaving || isDeleting}
+                  >
+                    {isDeleting ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="mr-2 h-4 w-4" />
+                    )}
+                    {isDeleting ? "Deleting..." : "Delete"}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. This will permanently delete the order 
+                      <strong> {order.product_id}</strong> for customer <strong>{order.customer_name}</strong>.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={onDelete}
+                      disabled={isDeleting}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      {isDeleting ? "Deleting..." : "Delete Order"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </>
           ) : (
             <div className="flex gap-2">
@@ -902,7 +948,7 @@ const OrderDetailView: React.FC<OrderDetailViewProps> = ({
 
         {/* Sidebar */}
         <div className="space-y-6">
-          {/* Product Image - Fixed Section */}
+          {/* Product Image */}
           <Card>
             <CardHeader>
               <CardTitle>Product Image</CardTitle>
@@ -1036,7 +1082,7 @@ const OrderDetailView: React.FC<OrderDetailViewProps> = ({
                         <SelectItem value="Delivered">
                           Delivered
                         </SelectItem>
-                        <SelectItem value="Cancelled"> {/* Fixed: "cancelled" → "Cancelled" */}
+                        <SelectItem value="Cancelled">
                           Cancelled
                         </SelectItem>
                       </SelectContent>
@@ -1061,7 +1107,7 @@ const OrderDetailView: React.FC<OrderDetailViewProps> = ({
                 variant="outline" 
                 className="w-full justify-start"
                 onClick={handlePrintOrder}
-                disabled={isSaving}
+                disabled={isSaving || isDeleting}
               >
                 <Printer className="mr-2 h-4 w-4" />
                 Print Order

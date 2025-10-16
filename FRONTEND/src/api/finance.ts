@@ -33,12 +33,40 @@ export const fetchTransaction = async (id: number): Promise<Transaction> => {
 };
 
 export const createTransaction = async (transaction: CreateTransactionData): Promise<Transaction> => {
-  const res = await api.post<Transaction>("/api/finance/transactions/", transaction);
+  // Ensure proper data formatting
+  const payload = {
+    ...transaction,
+    amount: transaction.amount, // Already string from form
+    date: transaction.date, // Keep as-is (YYYY-MM-DD)
+    description: transaction.description || ''
+  };
+  
+  const res = await api.post<Transaction>("/api/finance/transactions/", payload);
   return res.data;
 };
 
 export const updateTransaction = async (id: number, transaction: Partial<Transaction>): Promise<Transaction> => {
-  const res = await api.patch<Transaction>(`/api/finance/transactions/${id}/`, transaction);
+  // Create a properly typed payload
+  const payload: Record<string, any> = {};
+  
+  // Only include defined fields
+  if (transaction.category !== undefined) {
+    payload.category = typeof transaction.category === 'string' ? parseInt(transaction.category) : transaction.category;
+  }
+  
+  if (transaction.amount !== undefined) {
+    payload.amount = transaction.amount; // Already string from form
+  }
+  
+  if (transaction.date !== undefined) {
+    payload.date = transaction.date;
+  }
+  
+  if (transaction.description !== undefined) {
+    payload.description = transaction.description;
+  }
+  
+  const res = await api.put<Transaction>(`/api/finance/transactions/${id}/`, payload);
   return res.data;
 };
 
@@ -51,6 +79,7 @@ export const fetchFinanceReport = async (startDate?: string, endDate?: string): 
   const params: Record<string, string> = {};
   if (startDate) params.start_date = startDate;
   if (endDate) params.end_date = endDate;
+  
   const res = await api.get<FinanceReport>("/api/finance/report/", { params });
   return res.data;
 };

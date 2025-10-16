@@ -13,7 +13,7 @@ export interface Transaction {
   category_name: string;
   category_type: CategoryType;
   amount: string; // Decimal as string from backend
-  date: string; // ISO date string
+  date: string; // ISO date string (YYYY-MM-DD)
   description: string;
 }
 
@@ -34,4 +34,12 @@ export interface FinanceReport {
 
 // Helper types for creating new entities
 export type CreateCategoryData = Omit<Category, 'id'>;
-export type CreateTransactionData = Omit<Transaction, 'id' | 'category_name' | 'category_type'>;
+
+export type CreateTransactionData = {
+  category: number;
+  amount: string;
+  date: string;
+  description: string;
+};
+
+export type UpdateTransactionData = Partial<Omit<Transaction, 'id' | 'category_name' | 'category_type'>>;

@@ -51,7 +51,7 @@ if DEBUG:
     WSGIRequestHandler.handle_one_request = silent_broken_pipe_handler
 
     # Optional: also silence socket delegate methods
-    socket.socket._delegate_methods = set()
+   # socket.socket._delegate_methods = set()
 # ---------------------------------------------------
 
 # Application definition
