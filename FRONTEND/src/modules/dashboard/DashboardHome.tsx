@@ -23,7 +23,7 @@ interface DashboardStats {
   totalOrders: number;
   pendingOrders: number;
   completedOrders: number;
-  totalRevenue: number;
+  totalReserve: number;
   recentOrders: Order[];
 }
 
@@ -33,7 +33,7 @@ const DashboardHome: React.FC = () => {
     totalOrders: 0,
     pendingOrders: 0,
     completedOrders: 0,
-    totalRevenue: 0,
+    totalReserve: 0,
     recentOrders: []
   });
   const [loading, setLoading] = useState(true);
@@ -83,15 +83,16 @@ const DashboardHome: React.FC = () => {
         .sort((a, b) => new Date(b.order_date).getTime() - new Date(a.order_date).getTime())
         .slice(0, 5);
 
-      // For now, we'll use a placeholder for revenue since orders don't have price information
-      // In a real app, you might want to fetch this from the finance module
-      const totalRevenue = completedOrders * 1500; // Placeholder calculation
+      // Calculate total reserve: sum of quantities from delivered orders multiplied by 15
+      const deliveredOrders = orders.filter(order => order.status === 'Delivered');
+      const totalDeliveredItems = deliveredOrders.reduce((total, order) => total + (order.quantity || 0), 0);
+      const totalReserve = totalDeliveredItems * 15;
 
       setStats({
         totalOrders,
         pendingOrders,
         completedOrders,
-        totalRevenue,
+        totalReserve,
         recentOrders: inProgressOrders
       });
     } catch (error: any) {
@@ -231,12 +232,12 @@ const DashboardHome: React.FC = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Reserve</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(stats.totalRevenue)}</div>
-            <p className="text-xs text-muted-foreground">Estimated revenue</p>
+            <div className="text-2xl font-bold">{formatCurrency(stats.totalReserve)}</div>
+            <p className="text-xs text-muted-foreground">Based on delivered items × 15</p>
           </CardContent>
         </Card>
       </div>
